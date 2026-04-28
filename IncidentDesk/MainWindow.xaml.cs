@@ -25,10 +25,38 @@ namespace IncidentDesk
             cbCategory.SelectedIndex = 0;
             cbStatus.SelectedIndex = 0;
 
-            SeedData();
+            try
+            {
+                incidents = storage.Load();
+
+                if (incidents.Count > 0)
+                {
+                    nextId = incidents.Max(i => i.Id) + 1;
+                }
+                else
+                {
+                    SeedData();
+                }
+            }
+            catch
+            {
+                SeedData();
+            }
+
             RefreshList();
         }
 
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            try
+            {
+                storage.Save(incidents);
+            }
+            catch
+            {
+                MessageBox.Show("Error saving data before closing.");
+            }
+        }
         private void SeedData()
         {
             incidents.Add(new Incident
