@@ -12,15 +12,20 @@ namespace IncidentDesk
 {
     public partial class MainWindow : Window
     {
+        // Timer for auto-saving incidents
         private DispatcherTimer autoSaveTimer;
+        // List to store incidents
         private List<Incident> incidents = new List<Incident>();
+        // Handles saving and loading incidents
         private IncidentStorage storage = new IncidentStorage();
-        private int nextId = 1;
+        // Tracks the next unique ID for new incidents
+        private int nextId = 1;                                                                                         
 
         public MainWindow()
         {
             InitializeComponent();
 
+            // Set default selections for filters and dropdowns
             cbFilterStatus.SelectedIndex = 0;
             cbSort.SelectedIndex = 0;
             cbSeverity.SelectedIndex = 0;
@@ -29,25 +34,25 @@ namespace IncidentDesk
 
             try
             {
+                // Load incidents from storage
                 incidents = storage.Load();
 
-                if (incidents.Count > 0)
-                {
-                    nextId = incidents.Max(i => i.Id) + 1;
-                }
-                else
-                {
-                    SeedData();
-                }
+                // Set nextId based on existing incidents
+                nextId = incidents.Count > 0 ? incidents.Max(i => i.Id) + 1 : 1;
             }
             catch
             {
+                // If loading fails, seed with default data
                 SeedData();
             }
 
             RefreshList();
-            autoSaveTimer = new DispatcherTimer();
-            autoSaveTimer.Interval = TimeSpan.FromMinutes(1);
+
+            // Set up auto-save every minute
+            autoSaveTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMinutes(1)
+            };
 
             autoSaveTimer.Tick += (s, e) =>
             {
@@ -57,6 +62,7 @@ namespace IncidentDesk
                 }
                 catch
                 {
+                    // Ignore save errors during auto-save
                 }
             };
 
@@ -67,6 +73,7 @@ namespace IncidentDesk
         {
             try
             {
+                // Save incidents before closing
                 storage.Save(incidents);
             }
             catch
@@ -74,8 +81,10 @@ namespace IncidentDesk
                 MessageBox.Show("Error saving data before closing.");
             }
         }
+
         private void SeedData()
         {
+            // Add some default incidents
             incidents.Add(new Incident
             {
                 Id = nextId++,
@@ -99,6 +108,7 @@ namespace IncidentDesk
 
         private void RefreshList()
         {
+            // Filter and sort incidents based on user input
             string search = txtSearch.Text.ToLower();
             string filterStatus = GetComboBoxValue(cbFilterStatus);
             string sortBy = GetComboBoxValue(cbSort);
@@ -114,30 +124,23 @@ namespace IncidentDesk
                 results = results.Where(i => i.Status == filterStatus);
             }
 
-            if (sortBy == "Severity")
+            results = sortBy switch
             {
-                results = results.OrderBy(i => i.Severity);
-            }
-            else if (sortBy == "Category")
-            {
-                results = results.OrderBy(i => i.Category);
-            }
-            else
-            {
-                results = results.OrderByDescending(i => i.DateReported);
-            }
+                "Severity" => results.OrderBy(i => i.Severity),
+                "Category" => results.OrderBy(i => i.Category),
+                _ => results.OrderByDescending(i => i.DateReported)
+            };
 
-            lstIncidents.ItemsSource = null;
+            // Update the ListBox with filtered results
             lstIncidents.ItemsSource = results.ToList();
-
             lstIncidents.DisplayMemberPath = "Title";
 
             UpdateDashboard();
         }
 
-
         private void UpdateDashboard()
         {
+            // Update the dashboard with summary stats
             int open = incidents.Count(i => i.Status == "Open");
             int resolved = incidents.Count(i => i.Status == "Resolved");
             int high = incidents.Count(i => i.Severity == "High");
@@ -147,19 +150,21 @@ namespace IncidentDesk
 
         private string GetComboBoxValue(ComboBox comboBox)
         {
+            // Get the selected value from a ComboBox
             ComboBoxItem item = comboBox.SelectedItem as ComboBoxItem;
             return item?.Content.ToString() ?? "";
         }
 
         private void btnAdd_Click(object sender, RoutedEventArgs e)
         {
+            // Add a new incident
             if (string.IsNullOrWhiteSpace(txtTitle.Text))
             {
                 MessageBox.Show("Please enter a title.");
                 return;
             }
 
-            Incident incident = new Incident
+            incidents.Add(new Incident
             {
                 Id = nextId++,
                 Title = txtTitle.Text,
@@ -168,15 +173,15 @@ namespace IncidentDesk
                 Status = GetComboBoxValue(cbStatus),
                 Notes = txtNotes.Text,
                 DateReported = DateTime.Now
-            };
+            });
 
-            incidents.Add(incident);
             ClearFields();
             RefreshList();
         }
 
         private void btnUpdate_Click(object sender, RoutedEventArgs e)
         {
+            // Update the selected incident
             Incident selected = lstIncidents.SelectedItem as Incident;
 
             if (selected == null)
@@ -196,6 +201,7 @@ namespace IncidentDesk
 
         private void btnDelete_Click(object sender, RoutedEventArgs e)
         {
+            // Delete the selected incident
             Incident selected = lstIncidents.SelectedItem as Incident;
 
             if (selected == null)
@@ -211,6 +217,7 @@ namespace IncidentDesk
 
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
+            // Save incidents to storage
             try
             {
                 storage.Save(incidents);
@@ -224,15 +231,11 @@ namespace IncidentDesk
 
         private void btnLoad_Click(object sender, RoutedEventArgs e)
         {
+            // Load incidents from storage
             try
             {
                 incidents = storage.Load();
-
-                if (incidents.Count > 0)
-                {
-                    nextId = incidents.Max(i => i.Id) + 1;
-                }
-
+                nextId = incidents.Count > 0 ? incidents.Max(i => i.Id) + 1 : 1;
                 RefreshList();
                 MessageBox.Show("Data loaded successfully.");
             }
@@ -244,16 +247,13 @@ namespace IncidentDesk
 
         private void lstIncidents_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // Populate fields with the selected incident's details
             Incident selected = lstIncidents.SelectedItem as Incident;
 
-            if (selected == null)
-            {
-                return;
-            }
+            if (selected == null) return;
 
             txtTitle.Text = selected.Title;
             txtNotes.Text = selected.Notes;
-
             SetComboBox(cbSeverity, selected.Severity);
             SetComboBox(cbCategory, selected.Category);
             SetComboBox(cbStatus, selected.Status);
@@ -261,6 +261,7 @@ namespace IncidentDesk
 
         private void SetComboBox(ComboBox comboBox, string value)
         {
+            // Set the selected value of a ComboBox
             foreach (ComboBoxItem item in comboBox.Items)
             {
                 if (item.Content.ToString() == value)
@@ -273,6 +274,7 @@ namespace IncidentDesk
 
         private void ClearFields()
         {
+            // Clear all input fields
             txtTitle.Clear();
             txtNotes.Clear();
             cbSeverity.SelectedIndex = 0;
@@ -282,16 +284,19 @@ namespace IncidentDesk
 
         private void txtSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
+            // Refresh the list when the search text changes
             RefreshList();
         }
 
         private void cbFilterStatus_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // Refresh the list when the filter status changes
             RefreshList();
         }
 
         private void cbSort_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // Refresh the list when the sort option changes
             RefreshList();
         }
     }

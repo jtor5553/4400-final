@@ -1,10 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- Output type is a Windows executable -->
     <OutputType>WinExe</OutputType>
+    <!-- Target framework is .NET 8 -->
     <TargetFramework>net8.0-windows</TargetFramework>
+    <!-- Enable nullable reference types -->
     <Nullable>enable</Nullable>
+    <!-- Enable implicit using directives -->
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Enable WPF support -->
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 

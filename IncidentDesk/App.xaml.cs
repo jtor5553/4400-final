@@ -5,7 +5,7 @@ using System.Windows;
 namespace IncidentDesk
 {
     /// <summary>
-    /// Interaction logic for App.xaml
+    /// Entry point for the WPF application.
     /// </summary>
     public partial class App : Application
     {

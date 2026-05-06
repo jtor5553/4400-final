@@ -7,10 +7,12 @@ namespace IncidentDesk.Services
 {
     public class IncidentStorage
     {
+        // File path for storing incidents
         private readonly string filePath = "incidents.json";
 
         public void Save(List<Incident> incidents)
         {
+            // Serialize incidents to JSON and save to file
             string json = JsonSerializer.Serialize(incidents, new JsonSerializerOptions
             {
                 WriteIndented = true
@@ -21,6 +23,7 @@ namespace IncidentDesk.Services
 
         public List<Incident> Load()
         {
+            // Load incidents from file, or return an empty list if the file doesn't exist
             if (!File.Exists(filePath))
             {
                 return new List<Incident>();
