@@ -6,11 +6,13 @@ using System.Linq;
 using System.Net.NetworkInformation;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace IncidentDesk
 {
     public partial class MainWindow : Window
     {
+        private DispatcherTimer autoSaveTimer;
         private List<Incident> incidents = new List<Incident>();
         private IncidentStorage storage = new IncidentStorage();
         private int nextId = 1;
@@ -44,6 +46,21 @@ namespace IncidentDesk
             }
 
             RefreshList();
+            autoSaveTimer = new DispatcherTimer();
+            autoSaveTimer.Interval = TimeSpan.FromMinutes(1);
+
+            autoSaveTimer.Tick += (s, e) =>
+            {
+                try
+                {
+                    storage.Save(incidents);
+                }
+                catch
+                {
+                }
+            };
+
+            autoSaveTimer.Start();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -117,6 +134,7 @@ namespace IncidentDesk
 
             UpdateDashboard();
         }
+
 
         private void UpdateDashboard()
         {
